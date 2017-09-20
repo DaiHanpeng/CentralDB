@@ -10,7 +10,7 @@ from DBInterface.SampleLocationInterface import SampleLocationTable,SampleLocati
 
 from ReagentInfoDef import ReagentInfoItem,InstrumentReagentInfo,SystemReagentInfo
 
-TABLE_UPDATE_TIMESTAMP_ID = r'Flaxlab'
+TABLE_UPDATE_TIMESTAMP_ID = r'Reagent'
 
 class ReagentInventoryParser():
     """
@@ -125,7 +125,6 @@ class ReagentInventoryParser():
                         #                         break
                         #             if not duplicated_found:
                         #                 self.sample_location_list.append(sample_location)
-
 
         if not self.last_updated_record_timestamp or (current_date_time > self.last_updated_record_timestamp):
             self.last_updated_record_timestamp = current_date_time
