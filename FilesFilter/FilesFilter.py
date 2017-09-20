@@ -61,7 +61,7 @@ class FilesFilter():
                 latest_modified_timestamp = os.path.getmtime(f)
                 #print latest_modified_timestamp
 
-        return latest_modified_timestamp
+        return datetime.fromtimestamp(latest_modified_timestamp)
 
 
 def test():

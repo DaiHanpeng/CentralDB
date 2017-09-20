@@ -97,6 +97,7 @@ class ReagentInventoryTable(BaseModel):
         self.reagent_pack_lot = reagent_pack_lot
         self.updated_timestamp = updated_timestamp
 
+
 class PatientTable(BaseModel):
     __tablename__ = 'patient'
     pid = Column(VARCHAR(24), primary_key=True, nullable=False,unique=True)
@@ -128,6 +129,7 @@ class PatientTable(BaseModel):
                'sex:'+HORIZONTAL_TABLE+self.sex+\
                'location:'+HORIZONTAL_TABLE+self.location
 
+
 class SampleTable(BaseModel):
     __tablename__ = 'sample'
     sid = Column(VARCHAR(24), primary_key=True, nullable=False,unique=True)
@@ -148,6 +150,25 @@ class SampleTable(BaseModel):
                'sample type:'+HORIZONTAL_TABLE+self.sample_type+\
                'pid:'+HORIZONTAL_TABLE+self.pid
 
+
+class SampleLocationTable(BaseModel):
+    __tablename__ = 'sample_location'
+    sid = Column(VARCHAR(24), primary_key=True, nullable=False,unique=True)
+    location = Column(VARCHAR(24))
+    timestamp = Column(DATETIME())
+
+    def __init__(self,sid,location=None,timestamp=None):
+        self.sid = sid
+        self.location = location
+        self.timestamp = timestamp
+
+    def __repr__(self):
+        return 'sample location information: \n'+\
+               'sid:'+HORIZONTAL_TABLE+self.sid+\
+               'location:'+HORIZONTAL_TABLE+self.location+\
+               'update timestamp:'+HORIZONTAL_TABLE+self.timestamp
+
+
 class ResultTable(BaseModel):
     __tablename__ = 'result'
     rid = Column(Integer(), primary_key=True, nullable=False,unique=True)
@@ -159,6 +180,7 @@ class ResultTable(BaseModel):
     instrument_id = Column(VARCHAR(45))
     sid = Column(VARCHAR(24))
     aspect = Column(VARCHAR(45))
+    flagged = Column(Integer())
 
     def __init__(self,\
                  test_name = None,\
@@ -168,7 +190,8 @@ class ResultTable(BaseModel):
                  datetime = None,\
                  instrument_id = None,\
                  sid = None,\
-                 aspect = None):
+                 aspect = None,\
+                 flagged = None):
         self.test_name = test_name
         self.dilution_factor = dilution_factor
         self.dilution_profile = dilution_profile
@@ -177,6 +200,7 @@ class ResultTable(BaseModel):
         self.instrument_id = instrument_id
         self.sid = sid
         self.aspect = aspect
+        self.flagged = flagged
 
     def __repr__(self):
         return 'result information: \n'+\
@@ -187,4 +211,68 @@ class ResultTable(BaseModel):
                'datetime:'+HORIZONTAL_TABLE+str(self.datetime)+\
                'instrument_id:'+HORIZONTAL_TABLE+str(self.instrument_id)+\
                'sid:'+HORIZONTAL_TABLE+self.sid,\
-               'aspecy:'+HORIZONTAL_TABLE+self.aspect
+               'aspect:'+HORIZONTAL_TABLE+self.aspect,\
+               'flagged:'+HORIZONTAL_TABLE+self.flagged
+
+
+class ResultFlagTable(BaseModel):
+    __tablename__ = 'flag'
+    fid = Column(Integer(), primary_key=True, nullable=False,unique=True)
+    code = Column(VARCHAR(24))
+    rid = Column(Integer())
+
+    def __init__(self,code=None,rid=None):
+        self.code = code
+        self.rid = rid
+
+    def __repr__(self):
+        return 'result flag information: \n'+\
+               'fid:'+HORIZONTAL_TABLE+self.fid+\
+               'flag code:'+HORIZONTAL_TABLE+self.code+\
+               'rid:'+HORIZONTAL_TABLE+self.rid
+
+
+class LasLogTable(BaseModel):
+    __tablename__ = 'las_log'
+    id = Column(Integer(),primary_key=True, nullable=False,autoincrement=True,unique=True)
+    node_id = Column(VARCHAR(45))
+    sample_id = Column(VARCHAR(45))
+    carrier_id = Column(VARCHAR(45))
+    timestamp = Column(DATETIME())
+    node_type = Column(VARCHAR(45))
+    log_code = Column(VARCHAR(45))
+    need_deliver = Column(CHAR(1))
+    delivered = Column(CHAR(1))
+    delivered_time_stamp = Column(DATETIME())
+
+    def __init__(self,\
+                 node_id=None,\
+                 sample_id=None, \
+                 carrier_id=None, \
+                 timestamp=None,\
+                 node_type=None,\
+                 log_code=None,\
+                 need_deliver=None,\
+                 delivered=None,\
+                 delivered_time_stamp=None):
+        self.node_id = node_id
+        self.sample_id = sample_id
+        self.carrier_id = carrier_id
+        self.timestamp = timestamp
+        self.node_type = node_type
+        self.log_code = log_code
+        self.need_deliver = need_deliver
+        self.delivered = delivered
+        self.delivered_time_stamp = delivered_time_stamp
+
+    def __repr__(self):
+        return 'las log: \n'+\
+               'node_id:' + HORIZONTAL_TABLE+str(self.node_id) + ',' + \
+               'sample_id:' + HORIZONTAL_TABLE+str(self.sample_id) + ',' + \
+               'carrier_id:' + HORIZONTAL_TABLE + str(self.carrier_id) + ',' + \
+               'timestamp:' + HORIZONTAL_TABLE + str(self.timestamp) + ',' + \
+               'node_type:' + HORIZONTAL_TABLE + str(self.node_type) + ',' + \
+               'log_code:' + HORIZONTAL_TABLE + str(self.log_code) + ',' + \
+               'need_deliver:' + HORIZONTAL_TABLE + str(self.need_deliver) + ',' + \
+               'delivered:' + HORIZONTAL_TABLE + str(self.delivered) + ',' + \
+               'delivered_time_stamp:' + HORIZONTAL_TABLE + str(self.delivered_time_stamp)

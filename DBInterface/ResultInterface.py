@@ -32,7 +32,8 @@ class ResultInterface():
                        datetime = None,\
                        instrument_id = None,\
                        sid = None,\
-                       aspect = None):
+                       aspect = None,\
+                       flagged = None):
         #self.session.add(PatientTable(pid,fname,lname,birthday,sex,location))
         # use merge() instead od add() to avoid duplicated insert error from MySQL.
         self.session.add(ResultTable(test_name = test_name,\
@@ -42,11 +43,12 @@ class ResultInterface():
                                        datetime=datetime,\
                                        instrument_id=instrument_id,\
                                        sid=sid,\
-                                       aspect = aspect))
+                                       aspect = aspect,\
+                                       flagged=flagged))
 
-    def add_new_records(self,patient_list):
-        if isinstance(patient_list,list):
-            for item in patient_list:
+    def add_new_records(self, result_list):
+        if isinstance(result_list, list):
+            for item in result_list:
                 if isinstance(item,ResultTable):
                     self.add_new_record(test_name=item.test_name,\
                                         dilution_profile=item.dilution_profile,\
@@ -55,7 +57,8 @@ class ResultInterface():
                                         datetime=item.datetime,\
                                         instrument_id = item.instrument_id,\
                                         sid=item.sid,\
-                                        aspect=item.aspect)
+                                        aspect=item.aspect,\
+                                        flagged=item.flagged)
             self.write_to_db()
 
     def write_to_db(self):

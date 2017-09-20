@@ -1,10 +1,9 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from Tables import BaseModel,SampleTable
+from Tables import BaseModel,SampleLocationTable
 
-
-class SampleInterface():
+class SampleLocationInterface():
     """
     db interface for sample table.
     """
@@ -25,16 +24,18 @@ class SampleInterface():
     def init_tables(self):
         BaseModel.metadata.create_all(self.engine)
 
-    def add_new_record(self, sid, tube_type=None, sample_type=None, pid=None):
+    def add_new_record(self, sid, location=None, timestamp=None):
         #self.session.add(PatientTable(pid,fname,lname,birthday,sex,location))
         # use merge() instead of add() to avoid duplicated insert error from MySQL.
-        self.session.merge(SampleTable(sid,tube_type,sample_type,pid))
+        self.session.merge(SampleLocationTable(sid,location,timestamp))
 
-    def add_new_records(self, sample_list):
-        if isinstance(sample_list, list):
-            for item in sample_list:
-                if isinstance(item,SampleTable):
-                    self.add_new_record(item.sid,item.tube_type,item.sample_type,item.pid)
+    def add_new_records(self, sample_location_list):
+        if isinstance(sample_location_list, list):
+            for item in sample_location_list:
+                if isinstance(item,SampleLocationTable):
+                    self.add_new_record(item.sid,item.location,item.timestamp)
+                else:
+                    print 'sample location type error!'
             self.write_to_db()
 
     def write_to_db(self):
@@ -46,17 +47,20 @@ class SampleInterface():
             print ex
 
 
-def test01():
-    db_interface = SampleInterface()
+def mytest01():
+    from datetime import datetime
+    db_interface = SampleLocationInterface()
     # insert normal data
     print 'normal testing:'
-    db_interface.add_new_record('test001','03','Serum')
-    db_interface.add_new_record('test002','03','Urine','test001')
+    db_interface.add_new_record('test001','IOM',datetime.now())
+    db_interface.add_new_record('test002','RSM',datetime.now())
     # test insert abnormal data
     # should fail because the foreign key constrain
-    print 'abnormal testing:'
-    db_interface.add_new_record('test003','03','Urine','undefined_pid')
+    #print 'abnormal testing:'
+    #db_interface.add_new_record('test003','03','Urine','undefined_pid')
     db_interface.write_to_db()
 
+
+
 if __name__ == '__main__':
-    test01()
+    mytest01()

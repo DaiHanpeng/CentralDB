@@ -6,6 +6,7 @@ from DBInterface.Tables import LastUpdateTimestampTable
 from DBInterface.Tables import ReagentInventoryTable
 from DBInterface.ReagentInventoryInterface import ReagentInventoryInterface
 from DBInterface.LastUpdateTimestampInterface import LastUpdateTimestampTable,LastUpdateTimestampInterface
+from DBInterface.SampleLocationInterface import SampleLocationTable,SampleLocationInterface
 
 from ReagentInfoDef import ReagentInfoItem,InstrumentReagentInfo,SystemReagentInfo
 
@@ -24,10 +25,13 @@ class ReagentInventoryParser():
         self.last_updated_record_timestamp = timestamp_table_interface.get_record_last_update_timestamp(TABLE_UPDATE_TIMESTAMP_ID)
 
         self.system_reagent = SystemReagentInfo()
+        # self.sample_location_list = []
 
     def parse(self,log_file):
         current_date_time = None
         last_updated_record_timestamp = self.last_updated_record_timestamp
+
+        # self.sample_location_list = []
 
         file_content_list = []
         if isinstance(log_file,str) and os.path.isfile(log_file):
@@ -77,6 +81,52 @@ class ReagentInventoryParser():
                             if last_updated_record_timestamp and (time_stamp <= last_updated_record_timestamp):
                                 break
 
+                        # elif line.find(r'SAMPLE-DETECTED')>0:
+                        #     info_list = line.split()
+                        #     if len(info_list) > 7:
+                        #         sid = None
+                        #         timestamp = None
+                        #         location = None
+                        #         if len(info_list[-2].rsplit(r'^')) > 2:
+                        #             sid = info_list[-2].rsplit(r'^')[1]
+                        #         if info_list[1].find(r'timestamp')>0 and info_list[1].find(r'"') > 1:
+                        #             timestamp = info_list[1].split(r'"')[1]
+                        #         location = 'Track'
+                        #         #insert the record into the list
+                        #         if sid and timestamp and location:
+                        #             sample_location = SampleLocationTable(sid=sid,location=location,timestamp=timestamp)
+                        #             duplicated_found = False
+                        #             for item in self.sample_location_list:
+                        #                 if isinstance(item,SampleLocationTable):
+                        #                     if item.sid == sid:
+                        #                         duplicated_found = True
+                        #                         break
+                        #             if not duplicated_found:
+                        #                 self.sample_location_list.append(sample_location)
+                        # elif line.find(r'SAMPLE-LOCATION')>0:
+                        #     info_list = line.split()
+                        #     if len(info_list) > 7:
+                        #         sid = None
+                        #         timestamp = None
+                        #         location = None
+                        #         if len(info_list[-2].rsplit(r'^')) > 2:
+                        #             sid = info_list[-2].rsplit(r'^')[1]
+                        #         if info_list[1].find(r'timestamp')>0 and info_list[1].find(r'"') > 1:
+                        #             timestamp = info_list[1].split(r'"')[1]
+                        #         location = info_list[5]
+                        #         #insert the record into the list
+                        #         if sid and timestamp and location:
+                        #             sample_location = SampleLocationTable(sid=sid,location=location,timestamp=timestamp)
+                        #             duplicated_found = False
+                        #             for item in self.sample_location_list:
+                        #                 if isinstance(item,SampleLocationTable):
+                        #                     if item.sid == sid:
+                        #                         duplicated_found = True
+                        #                         break
+                        #             if not duplicated_found:
+                        #                 self.sample_location_list.append(sample_location)
+
+
         if not self.last_updated_record_timestamp or (current_date_time > self.last_updated_record_timestamp):
             self.last_updated_record_timestamp = current_date_time
             #update to db
@@ -84,6 +134,17 @@ class ReagentInventoryParser():
             timestamp_table_interface.set_record_last_update_timestamp(TABLE_UPDATE_TIMESTAMP_ID,self.last_updated_record_timestamp)
 
     def to_db(self):
+        self.reagent_to_db()
+        # print 'len of sample location list:'
+        # print len(self.sample_location_list)
+        # self.sample_location_to_db()
+
+    # def sample_location_to_db(self):
+    #     db_interface = SampleLocationInterface()
+    #     if self.sample_location_list:
+    #         db_interface.add_new_records(self.sample_location_list)
+
+    def reagent_to_db(self):
         db_interface = ReagentInventoryInterface()
 
         for instr in self.system_reagent.system_reagent:
@@ -105,12 +166,14 @@ class ReagentInventoryParser():
         self.to_db()
 
     def __repr__(self):
-        return 'parserd reagent info:' + str(self.system_reagent)
+        return 'parserd reagent info:' + str(self.system_reagent).join(str(item) for item in self.sample_location_list)
 
-def test():
+def mytest():
     reagent_inventory_parser = ReagentInventoryParser()
 
-    flexlab_log_folder = r'N:\Log'
+    #flexlab_log_folder = r'N:\Log'
+    flexlab_log_folder = r'F:\HK\GHK\centralDB'
+
 
     flexlab_log_file = reagent_inventory_parser.pre_work(flexlab_log_folder)
     print flexlab_log_file
@@ -118,4 +181,4 @@ def test():
     print reagent_inventory_parser
 
 if __name__ == '__main__':
-    test()
+    mytest()

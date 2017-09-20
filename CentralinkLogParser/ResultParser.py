@@ -2,10 +2,12 @@ from datetime import datetime,date
 
 from FilesFilter.FilesFilter import FilesFilter
 
-from DBInterface.Tables import SampleTable,PatientTable,ResultTable
+from DBInterface.Tables import SampleTable,PatientTable,ResultTable,ResultFlagTable
 from DBInterface.PatientInterface import PatientInterface
 from DBInterface.SampleInterface import SampleInterface
 from DBInterface.ResultInterface import ResultInterface
+from DBInterface.ResultFlagInterface import ResultFlagInterface
+
 
 from DBInterface.LastUpdateTimestampInterface import LastUpdateTimestampInterface
 
@@ -32,6 +34,7 @@ class ResultParser():
         self.patient_list = []
         self.sample_list = []
         self.result_list = []
+        self.result_flag_list = []
 
         current_timestamp_newer_than_last = False
 
@@ -61,78 +64,95 @@ class ResultParser():
 
             if file_content_list:
                 for line in file_content_list:
-                    if isinstance(line,str):
-                        if line.startswith(r'L|1|'):
-                            patient = None
-                            sample = None
-                            result = None
-                        elif line.startswith(r'P|1|') and -1 <> line.find(r'Human^Human') and (True == current_timestamp_newer_than_last):
-                            patient_info_list = line.split(r'|')
-                            if len(patient_info_list) > 8:
-                                pid = patient_info_list[2]
-                                if not pid:
-                                    continue
-                                lname = patient_info_list[5]
-                                birthday = patient_info_list[7]
-                                if birthday:
-                                    #print birthday
-                                    birthday = datetime.strptime(birthday,'%Y%m%d').date()
-                                else:
-                                    birthday = None
-                                sex = patient_info_list[8]
-                                patient = PatientTable(pid=pid,\
-                                                       lname=lname,\
-                                                       birthday=birthday,\
-                                                       sex=sex)
-                                self.patient_list.append(patient)
-                        elif line.startswith(r'O|1|') and -1 == line.find(r'||||Q|||') and patient:
-                            sample_info_list = line.split(r'|')
-                            if len(sample_info_list) > 15:
-                                sid = sample_info_list[2]
-                                if not sid:
-                                    print 'no sample id!'
-                                    continue
-                                tube_type = sample_info_list[9].split(r'^')[-1]
-                                sample_type = sample_info_list[15]
-                                pid = patient.pid
-                                sample = SampleTable(sid=sid,\
-                                                     tube_type=tube_type,\
-                                                     sample_type=sample_type,\
-                                                     pid=pid)
-                                self.sample_list.append(sample)
-                        elif line.startswith(r'R|') and len(line.split(r'||')) > 1 and -1 <> line.find(r'^^^') and sample:
-                            result_info_list = line.split(r'|')
-                            if len(result_info_list) > 11:
-                                test_name = result_info_list[2].split(r'^')[3]
-                                dilution_profile = result_info_list[2].split(r'^')[4]
-                                dilution_factor = result_info_list[2].split(r'^')[5]
-                                aspect = result_info_list[2].split(r'^')[-2]
-                                result = result_info_list[3]
-                                dt = result_info_list[11]
-                                if dt:
-                                    dt = datetime.strptime(dt,'%Y%m%d%H%M%S')
-                                else:
-                                    dt = None
-                                    print 'datetime is null: '+'sample_id: '+sample.sid
-                                instrument_id = result_info_list[-1]
-                                sid = sample.sid
-                                result = ResultTable(test_name=test_name,\
-                                                 dilution_profile=dilution_profile,\
-                                                 dilution_factor=dilution_factor,\
-                                                 result=result,\
-                                                 datetime=dt,\
-                                                 instrument_id=instrument_id,\
-                                                 sid=sid,\
-                                                 aspect=aspect)
-                                self.result_list.append(result)
-                        elif -1 <> line.find(r'INFO [IO-TCP]'):
-                            dt = line.split(r'INFO [IO-TCP]')[1].strip()
-                            dt = dt.split(r'.')[0]
-                            dt = datetime.strptime(dt,'%Y-%m-%d %H:%M:%S')
-                            if (not current_date_time) or current_date_time < dt:
-                                current_date_time = dt
-                                if not current_timestamp_newer_than_last:
-                                    current_timestamp_newer_than_last = True
+                    try:
+                        if isinstance(line,str):
+                            if line.startswith(r'L|1|'):
+                                patient = None
+                                sample = None
+                                result = None
+                            elif line.startswith(r'P|1|') and -1 <> line.find(r'Human^Human') and (True == current_timestamp_newer_than_last):
+                                patient_info_list = line.split(r'|')
+                                if len(patient_info_list) > 8:
+                                    pid = patient_info_list[2]
+                                    if not pid:
+                                        continue
+                                    lname = patient_info_list[5]
+                                    birthday = patient_info_list[7]
+                                    if birthday:
+                                        #print birthday
+                                        birthday = datetime.strptime(birthday,'%Y%m%d').date()
+                                    else:
+                                        birthday = None
+                                    sex = patient_info_list[8]
+                                    patient = PatientTable(pid=pid,\
+                                                           lname=lname,\
+                                                           birthday=birthday,\
+                                                           sex=sex)
+                                    self.patient_list.append(patient)
+                            elif line.startswith(r'O|1|') and -1 == line.find(r'||||Q|||') and patient:
+                                sample_info_list = line.split(r'|')
+                                if len(sample_info_list) > 15:
+                                    sid = sample_info_list[2]
+                                    if not sid:
+                                        print 'no sample id!'
+                                        continue
+                                    tube_type = sample_info_list[9].split(r'^')[-1]
+                                    sample_type = sample_info_list[15]
+                                    pid = patient.pid
+                                    sample = SampleTable(sid=sid,\
+                                                         tube_type=tube_type,\
+                                                         sample_type=sample_type,\
+                                                         pid=pid)
+                                    self.sample_list.append(sample)
+                            elif line.startswith(r'R|') and len(line.split(r'||')) > 1 and -1 <> line.find(r'^^^') and sample:
+                                result_info_list = line.split(r'|')
+                                if len(result_info_list) > 11:
+                                    test_name = result_info_list[2].split(r'^')[3]
+                                    dilution_profile = result_info_list[2].split(r'^')[4]
+                                    dilution_factor = result_info_list[2].split(r'^')[5]
+                                    aspect = result_info_list[2].split(r'^')[-2]
+                                    result = result_info_list[3]
+                                    dt = result_info_list[11]
+                                    if dt:
+                                        if dt.isdigit() and len(dt) > 8:
+                                            dt = datetime.strptime(dt,'%Y%m%d%H%M%S')
+                                        else:
+                                            dt = None
+                                            print 'datetime format is abnormal: ' + 'sample_id: ' + sample.sid
+                                    else:
+                                        dt = None
+                                        print 'datetime is null: '+'sample_id: '+sample.sid
+                                    instrument_id = result_info_list[-1]
+                                    sid = sample.sid
+                                    flagged = 0
+                                    if line.find(r'|||*||||^')>0:
+                                        flagged = 1
+                                    result = ResultTable(test_name=test_name,\
+                                                     dilution_profile=dilution_profile,\
+                                                     dilution_factor=dilution_factor,\
+                                                     result=result,\
+                                                     datetime=dt,\
+                                                     instrument_id=instrument_id,\
+                                                     sid=sid,\
+                                                     aspect=aspect,\
+                                                     flagged=flagged)
+                                    self.result_list.append(result)
+                            #elif line.startswith(r'C|1|I|') and line.find(r'|I')>1 and result:
+                            #    flag_code = line.split(r'|')[3]
+                            #    flag = ResultFlagTable(code=flag_code,rid=result.rid)
+                            #    self.result_flag_list.append(flag)
+                            elif -1 <> line.find(r'INFO [IO-TCP]'):
+                                dt = line.split(r'INFO [IO-TCP]')[1].strip()
+                                dt = dt.split(r'.')[0]
+                                dt = datetime.strptime(dt,'%Y-%m-%d %H:%M:%S')
+                                if (not current_date_time) or current_date_time < dt:
+                                    current_date_time = dt
+                                    if not current_timestamp_newer_than_last:
+                                        current_timestamp_newer_than_last = True
+                    except Exception as e:
+                        print 'exception encounteered:'
+                        print e
+
 
         if (not self.last_updated_record_timestamp) or (current_date_time > self.last_updated_record_timestamp):
             self.last_updated_record_timestamp = current_date_time
@@ -145,14 +165,17 @@ class ResultParser():
         db_patient_interface = PatientInterface()
         db_sample_interface = SampleInterface()
         db_result_interface = ResultInterface()
+        #db_result_flag_interface = ResultFlagInterface()
 
         print 'len of patient :' + str(len(self.patient_list))
         print 'len of sample  :' + str(len(self.sample_list))
         print 'len of result  :' + str(len(self.result_list))
+        #print 'len of result flag :' + str(len(self.result_flag_list))
 
         db_patient_interface.add_new_records(self.patient_list)
         db_sample_interface.add_new_records(self.sample_list)
         db_result_interface.add_new_records(self.result_list)
+        #db_result_flag_interface.add_new_records(self.result_flag_list)
 
 
     def pre_work(self,log_folder):
@@ -180,12 +203,13 @@ class ResultParser():
             '\n'.join(str(result) for result in self.result_list)
 
 
-def test():
+def mytest():
     result_parser = ResultParser()
-    lis_out_log_folder = r'M:\trl\LIS_OUT_Translator'
+    #lis_out_log_folder = r'M:\trl\LIS_OUT_Translator'
+    lis_out_log_folder = r'D:\ttt'
     lis_out_log_file_list = result_parser.pre_work(lis_out_log_folder)
     result_parser.work(lis_out_log_file_list)
     #print result_parser
 
 if __name__ == '__main__':
-    test()
+    mytest()
